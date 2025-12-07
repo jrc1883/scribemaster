@@ -7,4 +7,19 @@ src/libriscribe/__pycache__/
 src/libriscribe/utils/__pycache__/
 src/libriscribe/agents/__pycache__/
 projects/
-libriscribe.log
+libriscribe.log*.log
+
+# Temporary scripts
+fix_reviews.py
+grok_outline_gen.py
+
+# Project-specific config (contains API settings)
+config.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,200 +1,145 @@
-# LibriScribe 📚✨
+# ScribeMaster
 
-<div align="center">
-
-<img src="https://guerra2fernando.github.io/libriscribe/img/logo.png" alt="LibriScribe Logo" width="30%">
-
-Your AI-Powered Book Writing Assistant
-
+AI-Powered Book Writing Suite
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-visit%20now-green.svg)](https://guerra2fernando.github.io/libriscribe/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow.svg?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/guerra2fernando)
 
-</div>
+> **Forked and evolved from [LibriScribe](https://github.com/guerra2fernando/libriscribe)** by Fernando Guerra
 
-## 🌟 Overview
+## Overview
 
-LibriScribe harnesses the power of AI to revolutionize your book writing journey. Using a sophisticated multi-agent system, where each agent specializes in specific tasks, LibriScribe assists you from initial concept to final manuscript.
+ScribeMaster is an AI-powered book writing platform that produces rich, context-aware narratives through structured workflows, comprehensive world/character codexes, and multi-agent collaboration.
 
-![Libriscribe Demo](https://github.com/guerra2fernando/libriscribe/blob/main/docs/static/img/libriscribe.gif?raw=true)
+Unlike one-shot book generators, ScribeMaster:
+- **Maintains deep context continuity** - Previous chapters inform current writing
+- **Tracks character emotions and arcs** through a rich codex system
+- **Validates factual grounding** - Fiction stays believable
+- **Enables iterative refinement** - Review, critique, improve
 
-## ✨ Features
+## Features
 
-### Creative Assistance 🎨
-- **Concept Generation:** Transform your ideas into detailed book concepts
+### Creative Assistance
+- **Concept Generation:** Transform ideas into detailed book concepts
 - **Automated Outlining:** Create comprehensive chapter-by-chapter outlines
 - **Character Generation:** Develop rich, multidimensional character profiles
-- **Worldbuilding:** Craft detailed universes with rich history, culture, and geography
+- **Worldbuilding:** Craft detailed universes with history, culture, and geography
 
-### Writing & Editing 📝
-- **Chapter Writing:** Generate chapter drafts based on your outline
+### Writing & Editing
+- **Context-Aware Chapter Writing:** Generate chapters with full narrative context
 - **Content Review:** Catch inconsistencies and plot holes
-- **Style Editing:** Polish your writing style for your target audience
-- **Fact-Checking:** Verify factual claims (for non-fiction)
+- **Style Editing:** Polish writing for target audience
+- **Fact-Checking:** Verify claims for grounded fiction
 
-### Quality Assurance 🔍
+### Quality Assurance
 - **Plagiarism Detection:** Ensure content originality
-- **Research Assistant:** Access comprehensive topic research
-- **Manuscript Formatting:** Export to polished Markdown or PDF
+- **Research Assistant:** Comprehensive topic research
+- **Manuscript Formatting:** Export to Markdown or PDF
 
-## 🚀 Quickstart
+## Quick Start
 
-### 1. Installation
+### Installation
 
 ```bash
-git clone https://github.com/guerra2fernando/libriscribe.git
-cd libriscribe
+git clone https://github.com/jrc1883/scribemaster.git
+cd scribemaster
 pip install -e .
 ```
 
-### 2. Configuration
+### Configuration
 
-*   **LLM API Key:** Get an API key from one of the following services:
+Get an API key from one of the supported providers:
+- [OpenAI](https://platform.openai.com/signup/)
+- [Anthropic Claude](https://console.anthropic.com/)
+- [Google AI Studio (Gemini)](https://aistudio.google.com/)
+- [OpenRouter](https://openrouter.ai/)
+- [DeepSeek](https://platform.deepseek.com/)
+- [Mistral AI](https://console.mistral.ai/)
 
-    - **OpenAI:** [Get API Key](https://platform.openai.com/signup/)
-    - **Anthropic:** [Get API Key](https://console.anthropic.com/)
-    - **DeepSeek:** [Get API Key](https://platform.deepseek.com/)
-    - **Google AI Studio (Gemini):** [Get API Key](https://aistudio.google.com/)
-    - **Mistral AI:** [Get API Key](https://console.mistral.ai/)
-
-Create a `.env` file in the root directory and fill the api key of the LLM that you want to use:
+Create a `.env` file:
 ```bash
-OPENAI_API_KEY=your_api_key_here
-GOOGLE_AI_STUDIO_API_KEY=your_api_key_here
-CLAUDE_API_KEY=your_api_key_here
-DEEPSEEK_API_KEY=your_api_key_here
-MISTRAL_API_KEY=your_api_key_here
+OPENAI_API_KEY=your_key_here
+CLAUDE_API_KEY=your_key_here
+GOOGLE_AI_STUDIO_API_KEY=your_key_here
+OPENROUTER_API_KEY=your_key_here
+DEEPSEEK_API_KEY=your_key_here
+MISTRAL_API_KEY=your_key_here
 ```
 
-
-### 3. Launch LibriScribe
+### Launch
 
 ```bash
-libriscribe start
+scribemaster start
 ```
 
 Choose between:
-- 🎯 **Simple Mode:** Quick, streamlined book creation
-- 🎛️ **Advanced Mode:** Fine-grained control over each step
+- **Simple Mode:** Quick, streamlined book creation
+- **Advanced Mode:** Fine-grained control over each step
 
-## 💻 Advanced Usage
+## Core Commands
 
-### Project Creation
 ```bash
-python src/libriscribe/main.py start \
-    --project-name my_book \
-    --title "My Awesome Book" \
-    --genre fantasy \
-    --description "A tale of epic proportions." \
-    --category fiction \
-    --num-characters 3 \
-    --worldbuilding-needed True
-```
+# Start interactive session
+scribemaster start
 
-### Core Commands
-```bash
 # Generate book concept
-python src/libriscribe/main.py concept
+scribemaster concept
 
 # Create outline
-python src/libriscribe/main.py outline
+scribemaster outline
 
 # Generate characters
-python src/libriscribe/main.py characters
+scribemaster characters
 
 # Build world
-python src/libriscribe/main.py worldbuilding
+scribemaster worldbuilding
 
-# Write chapter
-python src/libriscribe/main.py write-chapter --chapter-number 1
+# Write chapter with context
+scribemaster write-chapter --chapter-number 1
 
 # Edit chapter
-python src/libriscribe/main.py edit-chapter --chapter-number 1
+scribemaster edit-chapter --chapter-number 1
 
 # Format book
-python src/libriscribe/main.py format
+scribemaster format
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 your_project/
-├── project_data.json    # Project metadata
-├── outline.md          # Book outline
-├── characters.json     # Character profiles
-├── world.json         # Worldbuilding details
-├── chapter_1.md       # Generated chapters
+├── project_data.json    # Full project knowledge base
+├── outline.md           # Book outline
+├── characters.json      # Character profiles
+├── world.json           # Worldbuilding details
+├── scenes.json          # Scene breakdowns
+├── chapter_1.md         # Generated chapters
 ├── chapter_2.md
-└── research_results.md # Research findings
+└── manuscript.md        # Compiled manuscript
 ```
 
-## ⚠️ Important Notes
+## Development Roadmap
 
-- **API Costs:** Monitor your LLM API usage and spending limits
-- **Content Quality:** Generated content serves as a starting point, not final copy
-- **Review Process:** Always review and edit the AI-generated content
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the full development plan.
 
+### Current Epics
+- **E0: Foundation** - GitHub setup, branding (Complete)
+- **E1: Enhanced Codex** - Rich character/scene/emotion tracking
+- **E2: Context Workflows** - PopKit-style flows with full context
+- **E3: Factual Grounding** - Historical/tech validation
+- **E4: Book Completion** - Finish active book project
+- **E5: Review & Polish** - Revision workflows
+- **E6: Semantic Search** - Vector embeddings (Future)
+- **E7: User Interface** - CLI/Web dashboard (Future)
 
-## 🔗 Quick Links
+## Attribution
 
-- [📚 Documentation](https://guerra2fernando.github.io/libriscribe/)
-- [🐛 Issue Tracker](https://github.com/guerra2fernando/libriscribe/issues)
-- [💡 Feature Requests](https://github.com/guerra2fernando/libriscribe/issues/new)
-- [📖 Wiki](https://github.com/guerra2fernando/libriscribe/wiki)
+This project is forked from and builds upon [LibriScribe](https://github.com/guerra2fernando/libriscribe) by Fernando Guerra and Lenxys. We gratefully acknowledge their foundational work on the multi-agent book writing system.
 
-## 🤝 Contributing
-
-We welcome contributions! Check out our [Contributing Guidelines](CONTRIBUTING.md) to get started.
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🗺️ LibriScribe Development Roadmap
-
-### 🤖 LLM Integration & Support
-- [X] **Multi-LLM Support Implementation**: Anthropic Claude Models - Google Gemini Models - - Deepseek Models - Mistral Models
-- [ ] **Model Performance Benchmarking**
-- [ ] **Automatic Model Fallback System**
-- [ ] **Custom Model Fine-tuning Support**
-- [ ] **Cost Optimization Engine**
-- [ ] **Response Quality Monitoring**
-
-### 🔍 Vector Store & Search Enhancement
-- [ ] **Multi-Vector Database Support**: ChromaDB Integration, MongoDB Vector Search, Pinecone Integration, Weaviate Implementation
-- [ ] **Advanced Search Features**: Semantic Search, Hybrid Search (Keywords + Semantic), Cross-Reference Search, Contextual Query Understanding
-- [ ] **Embedding Models Integration**: Multiple Embedding Model Support, Custom Embedding Training, Embedding Optimization
-
-### 🔐 Authentication & Authorization
-- [ ] **Cerbos Implementation**: Role-Based Access Control (RBAC), Attribute-Based Access Control (ABAC), Custom Policy Definitions, Policy Testing Framework
-- [ ] **User Management System**: User Registration & Authentication, Social Auth Integration, Multi-Factor Authentication, Session Management
-- [ ] **Security Features**: Audit Logging, Rate Limiting, API Key Management, Security Headers Implementation
-
-### 🌐 API Development
-- [ ] **Core API Features**: RESTful Endpoints, GraphQL Interface, WebSocket Support, API Documentation (OpenAPI/Swagger)
-- [ ] **API Management**: Version Control, Rate Limiting, Usage Monitoring, Error Handling
-- [ ] **Integration Features**: Webhook Support, Event System, Batch Processing, Export/Import Functionality
-
-### 🎨 Frontend Application
-- [ ] **Dashboard Development**: Modern React Interface, Real-time Updates, Progressive Web App Support, Responsive Design
-- [ ] **Editor Features**: Rich Text Editor, Markdown Support, Real-time Collaboration, Version History
-- [ ] **Visualization Tools**: Character Relationship Graphs, Plot Timeline Visualization, World Map Generation, Story Arc Visualization
-
-
-
-<div align="center">
-
-Made with ❤️ by Fernando Guerra and Lenxys
-
-[⭐ Star us on GitHub](https://github.com/guerra2fernando/libriscribe)
-
-If LibriScribe has been helpful for your projects, consider buying me a coffee:
-
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow.svg?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/guerra2fernando)
-
-</div>
+Made by jrc1883 | Built on LibriScribe

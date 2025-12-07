@@ -8,6 +8,7 @@ from libriscribe.utils import prompts_context as prompts
 from libriscribe.utils.file_utils import read_markdown_file, read_json_file, write_markdown_file, extract_json_from_markdown
 from libriscribe.knowledge_base import ProjectKnowledgeBase, Chapter, Scene
 from libriscribe.utils.llm_client import LLMClient
+from libriscribe.utils.context_manager import get_previous_chapter_context
 
 import json
 from rich.console import Console
@@ -70,6 +71,13 @@ class ChapterWriterAgent(Agent):
             # Process each scene individually
             scene_contents = []
             
+            # ### 2. NEW LOGIC: Get Context BEFORE the loop starts ###
+            # We get the text of the PREVIOUS chapter (e.g. if writing Ch 2, get Ch 1 text)
+            previous_chapter_context = get_previous_chapter_context(
+                project_knowledge_base.project_dir, 
+                chapter_number
+            )
+
             for scene in ordered_scenes:
                 console.print(f"🎬 Creating Scene/Section {scene.scene_number} of {len(ordered_scenes)}...")
 
@@ -93,6 +101,10 @@ class ChapterWriterAgent(Agent):
                     emotional_beat=scene.emotional_beat if scene.emotional_beat else "None specified",
                     total_scenes=len(ordered_scenes)
                 )
+                
+                # ### 3. UPDATE: Inject the Context into the prompt ###
+                # We append the previous chapter text so the AI knows what just happened.
+                scene_prompt += f"\n\n--- STORY CONTEXT (PREVIOUS CHAPTER) ---\n{previous_chapter_context}\n----------------------------------------"
                 
                 scene_prompt += f"\n\nIMPORTANT: Begin the scene with the title: **{scene_title}**"
 

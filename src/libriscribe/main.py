@@ -176,7 +176,7 @@ def generate_questions_with_llm(category: str, genre: str) -> Dict[str, Any]:
             console.print("[yellow]Could not parse LLM response. Using default questions.[/yellow]")
             return {
                 "q1": f"What key themes do you want to explore in your {genre} story?",
-                "q2": "Who is your favorite character and why?",
+                "q2": "Who is your favorite ` and why?",
                 "q3": "What makes your story unique compared to similar works?"
             }
     except Exception as e:
@@ -746,9 +746,21 @@ def characters():
     project_manager.generate_characters()
 
 @app.command()
-def worldbuilding():
-    """Generates worldbuilding details."""
-    project_manager.generate_worldbuilding()
+def worldbuilding(project_name: str = typer.Option(..., prompt="Project Name")):
+    """Generates worldbuilding details for a specific project."""
+    try:
+        # 1. Load the project
+        project_manager.load_project_data(project_name)
+        
+        # 2. Wake up the AI
+        llm_provider = project_manager.project_knowledge_base.get("llm_provider")
+        project_manager.initialize_llm_client(llm_provider)
+        
+        # 3. Do the work
+        project_manager.generate_worldbuilding()
+        print("Worldbuilding complete.")
+    except Exception as e:
+        print(f"Error: {e}")
 
 @app.command()
 def write(chapter_number: int = typer.Option(..., prompt="Chapter number")):
@@ -760,21 +772,56 @@ def write(chapter_number: int = typer.Option(..., prompt="Chapter number")):
 
 
 @app.command()
-def edit(chapter_number: int = typer.Option(..., prompt="Chapter number to edit")):
-    """Edits and refines a specific chapter"""
-    project_manager.edit_chapter(chapter_number)
+def edit(
+    project_name: str = typer.Option(..., prompt="Project name"),
+    chapter_number: int = typer.Option(..., prompt="Chapter number to edit")
+):
+    """Edits a specific chapter using the AI's critique."""
+    try:
+        # 1. Load Project
+        project_manager.load_project_data(project_name)
+        
+        # 2. Initialize AI
+        llm_provider = project_manager.project_knowledge_base.get("llm_provider")
+        if not llm_provider:
+             llm_provider = select_llm(project_manager.project_knowledge_base)
+        project_manager.initialize_llm_client(llm_provider)
+
+        # 3. Run the Editor Agent
+        console.print(f"[cyan]🤖 AI Editor is refining Chapter {chapter_number} based on the critique...[/cyan]")
+        project_manager.edit_chapter(chapter_number)
+        console.print(f"[green]✅ Chapter {chapter_number} revised![/green]")
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
 
 
 @app.command()
-def format():
+def format(project_name: str = typer.Option(..., prompt="Project name to format")):
     """Formats the entire book into a single Markdown or PDF file."""
-    output_format = select_from_list("Choose output format:", ["Markdown (.md)", "PDF (.pdf)"])
-    if output_format == "Markdown (.md)":
-        output_path = str(project_manager.project_dir / "manuscript.md")
-    else:
-        output_path = str(project_manager.project_dir / "manuscript.pdf")
-    project_manager.format_book(output_path)  # Pass output_path here
-    print(f"\nBook formatted and saved to: {output_path}")
+    try:
+        # 1. Load the project first!
+        project_manager.load_project_data(project_name)
+        
+        # 2. Wake up the AI (Required for the Formatting Agent)
+        llm_provider = project_manager.project_knowledge_base.get("llm_provider")
+        if not llm_provider:
+             llm_provider = select_llm(project_manager.project_knowledge_base)
+        project_manager.initialize_llm_client(llm_provider)
+
+        # 3. Now we can safely select the format
+        output_format = select_from_list("Choose output format:", ["Markdown (.md)", "PDF (.pdf)"])
+        
+        if output_format == "Markdown (.md)":
+            output_path = str(project_manager.project_dir / "manuscript.md")
+        else:
+            output_path = str(project_manager.project_dir / "manuscript.pdf")
+            
+        project_manager.format_book(output_path)
+        print(f"\nBook formatted and saved to: {output_path}")
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
 
 @app.command()
 def research(query: str = typer.Option(..., prompt="Research query")):
@@ -791,6 +838,16 @@ def resume(project_name: str = typer.Option(..., prompt="Project name to resume"
         # Determine where to resume from.  This logic is simplified for now
         # and assumes you'll mostly resume chapter writing. A more robust
         # solution would inspect more files.
+        # START OF NEW CODE ----------------------------------------
+        # We must wake up the AI agents before we can use them!
+        llm_provider = project_manager.project_knowledge_base.get("llm_provider")
+        
+        # If the save file didn't store the provider, ask for it again
+        if not llm_provider:
+            console.print("[yellow]LLM provider not found in save data.[/yellow]")
+            llm_provider = select_llm(project_manager.project_knowledge_base)
+            
+        project_manager.initialize_llm_client(llm_provider)
 
         if not project_manager.project_knowledge_base: 
             print("ERROR resuming project")
@@ -810,6 +867,30 @@ def resume(project_name: str = typer.Option(..., prompt="Project name to resume"
                     break  # Stop at the first missing chapter
 
             print(f"Last written chapter: {last_chapter}")
+
+            # --- NEW LOGIC START: Fill in missing steps ---
+            
+            # 1. Check for Characters
+            # We check if the dictionary is empty
+            if not project_manager.project_knowledge_base.characters:
+                console.print("\n[yellow]⚠️ Character profiles are missing. Generating them now...[/yellow]")
+                project_manager.generate_characters()
+                project_manager.checkpoint()
+                console.print("[green]✅ Characters generated![/green]")
+
+            # 2. Check for Worldbuilding
+            # We check if worldbuilding is needed AND if a key field (like geography) is empty
+            wb = project_manager.project_knowledge_base.worldbuilding
+            needs_wb = project_manager.project_knowledge_base.worldbuilding_needed
+            
+            # If the object is None, OR if it exists but is empty
+            if needs_wb and (wb is None or not wb.geography): 
+                console.print("\n[yellow]⚠️ Worldbuilding is missing. Generating it now...[/yellow]")
+                project_manager.generate_worldbuilding()
+                project_manager.checkpoint()
+                console.print("[green]✅ Worldbuilding generated![/green]")
+
+            # --- NEW LOGIC END ---
 
             # Check the project data and files to determine next steps
             for i in range(last_chapter + 1, num_chapters + 1):

@@ -155,7 +155,7 @@ class ProjectManagerAgent:
         if project_data_path.exists():
             data = ProjectKnowledgeBase.load_from_file(str(project_data_path)) 
             if data:
-                self.                self.project_knowledge_base = data
+                self.                project_knowledge_base = data
                 #CRITICAL: Set project_dir in project_knowledge_base
                 self.project_knowledge_base.project_dir = self.project_dir
             else:
@@ -292,7 +292,10 @@ class ProjectManagerAgent:
             
             # Format with LLM to ensure proper structure and flow
             console.print(f"{self.agents['formatting'].name} is: Formatting Original Chapters...")
-            prompt = prompts.FORMATTING_PROMPT.format(chapters=original_content)
+            # FIX: Pass the language to the prompt
+            prompt = prompts.FORMATTING_PROMPT.format(
+                chapters=original_content, 
+                language=self.project_knowledge_base.language)
             formatted_original = self.llm_client.generate_content(prompt, max_tokens=4000)
             
             # Add title page
@@ -352,7 +355,10 @@ class ProjectManagerAgent:
             
             # Format with LLM
             console.print(f"{self.agents['formatting'].name} is: Formatting Revised Chapters...")
-            prompt_revised = prompts.FORMATTING_PROMPT.format(chapters=revised_content)
+            # FIX: Pass the language here too
+            prompt_revised = prompts.FORMATTING_PROMPT.format(
+                chapters=revised_content, 
+                language=self.project_knowledge_base.language)
             formatted_revised = self.llm_client.generate_content(prompt_revised, max_tokens=4000)
             formatted_revised = title_page + formatted_revised
             
@@ -392,10 +398,19 @@ class ProjectManagerAgent:
         print(f"Fact-check results for chapter {chapter_number}: {results}")
 
     def review_content(self, chapter_number: int):
-        """Reviews chapter content."""
-        chapter_path = str(self.project_dir / f"chapter_{chapter_number}.md")# type: ignore
-        results = self.agents["content_reviewer"].execute(chapter_path) # type: ignore
-        print(f"Content review results for chapter {chapter_number}:\n{results.get('review', 'No review available.')}")
+            """Reviews chapter content."""
+            chapter_path = str(self.project_dir / f"chapter_{chapter_number}.md")
+            results = self.agents["content_reviewer"].execute(chapter_path)
+            print(f"Content review results for chapter {chapter_number}:\n{results.get('review', 'No review available.')}")
+            
+            # --- THE MISSING LINK ---
+            # You need to manually save the review into the knowledge base!
+            if self.project_knowledge_base:
+                chapter = self.project_knowledge_base.get_chapter(chapter_number)
+                if chapter:
+                    # Store the review text in the chapter object
+                    chapter.review = results.get('review', '')
+                    self.save_project_data() # Save immediately
 
     def does_chapter_exist(self, chapter_number: int) -> bool:
         """Checks if a chapter file exists."""

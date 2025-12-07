@@ -31,6 +31,8 @@ class Chapter(BaseModel):
     title: str = ""
     summary: str = ""
     scenes: List[Scene] = []
+    review: str = ""  # <--- ADD THIS LINE
+    # (other fields might follow, or this might be the end)
     # We don't store the full chapter text *here*, just metadata and scenes.
 
 class Worldbuilding(BaseModel):

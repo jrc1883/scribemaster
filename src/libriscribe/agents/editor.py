@@ -22,6 +22,18 @@ class EditorAgent(Agent):
     def __init__(self, llm_client: LLMClient):
         super().__init__("EditorAgent", llm_client)
 
+    def extract_scene_titles(self, content: str):
+        """Helper to identify scene breaks in the text."""
+        import re
+        # Looks for patterns like "### Scene 1", "**Scene 1**", or "Scene 1:"
+        # Returns a list of strings
+        titles = re.findall(r'(?:###|\*\*|#)\s*(Scene\s+\d+.*?)(?:\*\*|\n|$)', content, re.IGNORECASE)
+        
+        # If no explicit scenes are found, return a generic placeholder so the code doesn't break
+        if not titles:
+            return ["Full Chapter"]
+        return titles
+
     def execute(self, project_knowledge_base: ProjectKnowledgeBase, chapter_number: int) -> None:
         """Edits a chapter and saves the revised version."""
         try:
