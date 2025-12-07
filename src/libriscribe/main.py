@@ -915,6 +915,167 @@ def resume(project_name: str = typer.Option(..., prompt="Project name to resume"
 
 
 
+
+# =============================================================================
+# CODEX COMMANDS
+# =============================================================================
+
+@app.command()
+def codex_migrate(
+    project_name: str = typer.Option(None, "--project", "-p", help="Project name to migrate")
+):
+    """Migrate an existing project to the enhanced Codex format."""
+    from libriscribe.utils.codex_migrator import run_migration
+    from pathlib import Path
+
+    settings = Settings()
+
+    if not project_name:
+        projects_dir = Path(settings.projects_dir)
+        if projects_dir.exists():
+            projects = [p.name for p in projects_dir.iterdir() if p.is_dir()]
+            if projects:
+                project_name = select_from_list("Select a project to migrate:", projects)
+            else:
+                console.print("[red]No projects found.[/red]")
+                return
+
+    project_path = Path(settings.projects_dir) / project_name
+
+    if not project_path.exists():
+        console.print(f"[red]Project '{project_name}' not found at {project_path}[/red]")
+        return
+
+    console.print(f"[blue]Migrating project: {project_name}[/blue]")
+    codex = run_migration(str(project_path))
+
+    if codex:
+        console.print("[green]Migration complete![/green]")
+        console.print(f"   Characters: {len(codex.characters)}")
+        console.print(f"   Chapters: {len(codex.chapters)}")
+        console.print(f"   Callbacks: {len(codex.callbacks)}")
+        console.print(f"   Facts: {len(codex.facts)}")
+
+
+@app.command()
+def codex_show(
+    project_name: str = typer.Option(None, "--project", "-p", help="Project name"),
+    what: str = typer.Argument("overview", help="What to show: overview, characters, callbacks, facts")
+):
+    """View codex information for a project."""
+    from libriscribe.codex import MasterCodex
+    from pathlib import Path
+
+    settings = Settings()
+
+    if not project_name:
+        projects_dir = Path(settings.projects_dir)
+        if projects_dir.exists():
+            projects = [p.name for p in projects_dir.iterdir() if p.is_dir()]
+            if projects:
+                project_name = select_from_list("Select a project:", projects)
+            else:
+                console.print("[red]No projects found.[/red]")
+                return
+
+    codex_path = Path(settings.projects_dir) / project_name / "codex.json"
+
+    if not codex_path.exists():
+        console.print(f"[yellow]No codex found for '{project_name}'. Run 'codex-migrate' first.[/yellow]")
+        return
+
+    codex = MasterCodex.load_from_file(str(codex_path))
+    if not codex:
+        console.print("[red]Failed to load codex.[/red]")
+        return
+
+    if what == "overview":
+        console.print(Panel(
+            f"[bold]{codex.project_name}[/bold]\n\n"
+            f"Characters: {len(codex.characters)}\n"
+            f"Chapters: {len(codex.chapters)}\n"
+            f"Pending Callbacks: {len(codex.get_pending_callbacks())}\n"
+            f"Established Facts: {len(codex.facts)}\n\n"
+            f"Themes: {', '.join(codex.global_themes[:3])}...",
+            title="Codex Overview"
+        ))
+
+    elif what == "characters":
+        for name, char in codex.characters.items():
+            # Handle both enum and string values for emotions
+            emotions = ", ".join([
+                e.value if hasattr(e, 'value') else str(e)
+                for e in char.dominant_emotions[:3]
+            ])
+            arc_type = char.arc_type.value if hasattr(char.arc_type, 'value') else str(char.arc_type)
+            console.print(f"\n[bold cyan]{name}[/bold cyan]")
+            console.print(f"  Arc: {arc_type}")
+            console.print(f"  Emotions: {emotions}")
+            console.print(f"  Scenes: {len(char.scenes_appeared)}")
+
+    elif what == "callbacks":
+        pending = codex.get_pending_callbacks()
+        if not pending:
+            console.print("[green]All callbacks have been paid off![/green]")
+        else:
+            console.print(f"\n[yellow]Pending Callbacks ({len(pending)}):[/yellow]")
+            for cb in pending:
+                importance = cb.importance.upper() if isinstance(cb.importance, str) else cb.importance.value.upper()
+                status = cb.status if isinstance(cb.status, str) else cb.status.value
+                console.print(f"\n  [{importance}] {cb.name}")
+                console.print(f"    Setup: Ch{cb.setup_chapter}")
+                console.print(f"    Status: {status}")
+
+    elif what == "facts":
+        for fid, fact in codex.facts.items():
+            console.print(f"\n[cyan]{fact.category}[/cyan]: {fact.fact}")
+
+
+@app.command()
+def codex_context(
+    project_name: str = typer.Option(None, "--project", "-p", help="Project name"),
+    chapter: int = typer.Option(..., "--chapter", "-c", help="Chapter number"),
+    scene: int = typer.Option(1, "--scene", "-s", help="Scene number")
+):
+    """Get full context for writing a specific scene."""
+    from libriscribe.codex import MasterCodex
+    from pathlib import Path
+
+    settings = Settings()
+
+    if not project_name:
+        projects_dir = Path(settings.projects_dir)
+        if projects_dir.exists():
+            projects = [p.name for p in projects_dir.iterdir() if p.is_dir()]
+            if projects:
+                project_name = select_from_list("Select a project:", projects)
+
+    codex_path = Path(settings.projects_dir) / project_name / "codex.json"
+
+    if not codex_path.exists():
+        console.print(f"[yellow]No codex found. Run 'codex-migrate' first.[/yellow]")
+        return
+
+    codex = MasterCodex.load_from_file(str(codex_path))
+    if not codex:
+        console.print("[red]Failed to load codex.[/red]")
+        return
+
+    context = codex.get_scene_context(chapter, scene)
+
+    if not context:
+        console.print(f"[red]No scene found for Ch{chapter} Sc{scene}[/red]")
+        return
+
+    console.print(Panel(f"Context for Chapter {chapter}, Scene {scene}", style="bold blue"))
+
+    scene_data = context.get("scene", {})
+    console.print(f"\n[bold]Scene Summary:[/bold]")
+    console.print(f"  {scene_data.get('summary', 'N/A')}")
+
+    console.print(f"\n[bold]Themes:[/bold] {', '.join(context.get('global_themes', [])[:3])}")
+
+
 if __name__ == "__main__":
     # Display environment info for debugging
     if "--debug" in sys.argv:
@@ -922,5 +1083,4 @@ if __name__ == "__main__":
         console.print(f"Python: {sys.version}")
         console.print(f"Terminal: {os.environ.get('TERM', 'Unknown')}")
         console.print(f"Rich version: {rich.__version__}")
-        # Then continue with normal app execution
     app()
