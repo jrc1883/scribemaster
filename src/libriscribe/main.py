@@ -1076,6 +1076,127 @@ def codex_context(
     console.print(f"\n[bold]Themes:[/bold] {', '.join(context.get('global_themes', [])[:3])}")
 
 
+@app.command()
+def analyze(
+    project_name: str = typer.Option(None, "--project", "-p", help="Project name"),
+    output: str = typer.Option("console", "--output", "-o", help="Output: console, file, or json"),
+):
+    """Analyze book project - show gaps, opportunities, and what's next."""
+    from libriscribe.utils.book_analyzer import BookAnalyzer
+    from pathlib import Path
+
+    settings = Settings()
+
+    if not project_name:
+        projects_dir = Path(settings.projects_dir)
+        if projects_dir.exists():
+            projects = [p.name for p in projects_dir.iterdir() if p.is_dir()]
+            if projects:
+                project_name = select_from_list("Select a project to analyze:", projects)
+            else:
+                console.print("[red]No projects found.[/red]")
+                return
+
+    project_path = Path(settings.projects_dir) / project_name
+
+    if not project_path.exists():
+        console.print(f"[red]Project '{project_name}' not found.[/red]")
+        return
+
+    console.print(f"[blue]Analyzing {project_name}...[/blue]\n")
+
+    try:
+        analyzer = BookAnalyzer(project_path)
+        fact_sheet = analyzer.generate_fact_sheet()
+
+        if output == "console":
+            console.print(fact_sheet)
+        elif output == "file":
+            output_file = project_path / "FACT_SHEET.txt"
+            with open(output_file, "w", encoding="utf-8") as f:
+                f.write(fact_sheet)
+            console.print(f"[green]Fact sheet saved to {output_file}[/green]")
+        elif output == "json":
+            analysis = analyzer.analyze()
+            output_file = project_path / "analysis.json"
+            import json
+            with open(output_file, "w", encoding="utf-8") as f:
+                # Convert dataclass to dict manually
+                json.dump({
+                    "project_name": analysis.project_name,
+                    "chapters_written": analysis.chapters_written,
+                    "chapters_planned": analysis.chapters_planned,
+                    "completion_percent": analysis.completion_percent,
+                    "character_count": analysis.character_count,
+                    "callbacks_planted": analysis.callbacks_planted,
+                    "callbacks_paid_off": analysis.callbacks_paid_off,
+                    "themes": analysis.themes,
+                    "gap_count": len(analysis.gaps),
+                    "next_actions": [
+                        {"priority": a.priority, "action": a.action, "command": a.command}
+                        for a in analysis.next_actions
+                    ],
+                }, f, indent=2)
+            console.print(f"[green]Analysis saved to {output_file}[/green]")
+
+    except Exception as e:
+        console.print(f"[red]Error analyzing project: {e}[/red]")
+        raise
+
+
+@app.command()
+def next_action(
+    project_name: str = typer.Option(None, "--project", "-p", help="Project name"),
+):
+    """Show prioritized next actions (PopKit-style)."""
+    from libriscribe.utils.book_analyzer import BookAnalyzer
+    from pathlib import Path
+
+    settings = Settings()
+
+    if not project_name:
+        projects_dir = Path(settings.projects_dir)
+        if projects_dir.exists():
+            projects = [p.name for p in projects_dir.iterdir() if p.is_dir()]
+            if projects:
+                project_name = select_from_list("Select a project:", projects)
+            else:
+                console.print("[red]No projects found.[/red]")
+                return
+
+    project_path = Path(settings.projects_dir) / project_name
+
+    try:
+        analyzer = BookAnalyzer(project_path)
+        analysis = analyzer.analyze()
+
+        console.print(Panel(
+            f"[bold]{project_name}[/bold] - {analysis.completion_percent}% complete\n"
+            f"Chapters: {analysis.chapters_written}/{analysis.chapters_planned}",
+            title="Project Status"
+        ))
+
+        console.print("\n[bold cyan]WHAT'S NEXT:[/bold cyan]\n")
+
+        for action in analysis.next_actions:
+            color = {
+                1: "red",
+                2: "yellow",
+                3: "green",
+                4: "blue",
+                5: "white",
+            }.get(action.priority, "white")
+
+            console.print(f"  [{color}]{action.priority}.[/{color}] [{action.category.upper()}] {action.action}")
+            console.print(f"      [dim]{action.reason}[/dim]")
+            if not action.command.startswith("#"):
+                console.print(f"      [cyan]Run: {action.command}[/cyan]")
+            console.print()
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+
 if __name__ == "__main__":
     # Display environment info for debugging
     if "--debug" in sys.argv:
